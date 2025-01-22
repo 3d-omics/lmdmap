@@ -149,5 +149,6 @@ def main():
     if draw_microsamples:
         cropped_image = draw_microsamples_on_image(cropped_image, input_data)
         output_image_path = f"{cryosection}_marked.jpg"
+        cropped_image.save(output_image_path)
 
     print(f"Processed images and data saved succesfully.")
