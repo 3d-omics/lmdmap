@@ -1,3 +1,4 @@
+
 import argparse
 import os
 import pandas as pd
@@ -57,13 +58,13 @@ def fetch_data_from_airtable(cryosection):
                 size = ", ".join(map(str, size))
             if isinstance(shape, list):
                 shape = ", ".join(map(str, shape))
-
+                
             data.append({
                 "ID": record.get("id"),
                 "Xcoord": xcoord,
                 "Ycoord": ycoord,
-                "size": fields.get("size"),
-                "shape": fields.get("shape"),
+                "size": size,
+                "shape": shape,
                 "cryosection_text": fields.get("cryosection_text"),
                 "SampleType": fields.get("SampleType")
             })
@@ -97,7 +98,15 @@ def draw_microsamples_on_image(image, microsamples):
     return image
 
 # Main script
-def main(cryosection, overview_image):
+def main():
+    parser = argparse.ArgumentParser(description="Process cryosection data and images.")
+    parser.add_argument("cryosection", type=str, help="Cryosection identifier.")
+    parser.add_argument("overview_image", type=str, help="Path to the overview image.")
+    args = parser.parse_args()
+
+    cryosection = args.cryosection
+    overview_image = args.overview_image
+
     input_data = fetch_data_from_airtable(cryosection)
 
     if input_data.empty:
@@ -132,11 +141,3 @@ def main(cryosection, overview_image):
     input_data.to_csv(output_csv_path, index=False)
 
     print(f"Processed images and data saved as {output_image_path} and {output_csv_path}.")
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process cryosection data and images.")
-    parser.add_argument("cryosection", type=str, help="Cryosection identifier.")
-    parser.add_argument("overview_image", type=str, help="Path to the overview image.")
-    args = parser.parse_args()
-
-    main(args.cryosection, args.overview_image)
