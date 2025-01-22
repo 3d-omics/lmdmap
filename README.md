@@ -2,6 +2,8 @@
 
 **lmdmap** is a small python module to crop slide overview images into cryosection-specific overviews and to calculate and print the pixel coordinates of the microsamples. It is a tool used to display the spatial location of laser-microdissected samples in cryosection overviews, designed to generate the data displayed in the 3D'omics visualisation platform.
 
+![Overview of input and output data](overview.png "Overview of input and output data")
+
 ## Installation
 
 The latest version of **lmdmap** and its dependencies can be easily installed in any unix environment using the following code.
@@ -17,7 +19,6 @@ If a new **lmdmap** version is released, you can upgrade the module using the fo
 ```{sh}
 pip uninstall lmdmap
 pip install git+https://github.com/3d-omics/lmdmap.git
-
 ```
 
 ## Usage
