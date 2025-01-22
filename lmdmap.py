@@ -100,16 +100,22 @@ def draw_microsamples_on_image(image, microsamples):
 # Main script
 def main():
     parser = argparse.ArgumentParser(description="Process cryosection data and images.")
-    parser.add_argument("cryosection", type=str, help="Cryosection identifier.")
-    parser.add_argument("overview_image", type=str, help="Path to the overview image.")
+    parser.add_argument(
+        "-n", "--name", type=str, required=True,
+        help="Cryosection identifier (required)."
+    )
+    parser.add_argument(
+        "-i", "--image", type=str, required=True,
+        help="Path to the overview image (required)."
+    )
     parser.add_argument(
         "--draw-microsamples", action="store_true",
-        help="Draw microsamples on the output image (default: do not draw)."
+        help="Draw microsamples on the output cropped image (optional)."
     )
     args = parser.parse_args()
 
-    cryosection = args.cryosection
-    overview_image = args.overview_image
+    cryosection = args.name
+    overview_image = args.image
     draw_microsamples = args.draw_microsamples
 
     input_data = fetch_data_from_airtable(cryosection)
