@@ -27,6 +27,23 @@ pip uninstall lmdmap
 pip install git+https://github.com/3d-omics/lmdmap.git
 ```
 
+## Add Airtable API KEY
+
+**lmdmap** retrieves the information of the microsamples directly from the 3D'omics Airtable database. In order for Airtable to enable your computer to fetch data from the database you need to declare an AIRTABLE_API_KEY, which can be created for you by the database administration.
+
+Then, you can declare the variable for a one-time usage:
+```{sh}
+export AIRTABLE_API_KEY="THISISWHERETHEAPIKEYSHOULDBEPASTED"
+lmdmap -n G007bI105A -i 241113G007bI105post.jpg
+```
+
+Or you can save it in your shell configuration file `~/.bashrc, ~/.zshrc` to keep it forever:
+```{sh}
+nano ~/.bashrc
+export AIRTABLE_API_KEY="THISISWHERETHEAPIKEYSHOULDBEPASTED"
+source ~/.bashrc
+```
+
 ## Usage
 
 The minimum arguments needed to use **lmdmap** are the cryosection name (***-n***), which is used to fetch the relevant information from the 3D'omics Airtable database as well as to name the default output files, and the slide overview image (***-i***) from which the cropped image is generated.
