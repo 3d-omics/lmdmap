@@ -58,7 +58,7 @@ def fetch_data_from_airtable(cryosection):
                 size = ", ".join(map(str, size))
             if isinstance(shape, list):
                 shape = ", ".join(map(str, shape))
-                
+
             data.append({
                 "ID": record.get("id"),
                 "Xcoord": xcoord,
@@ -102,10 +102,15 @@ def main():
     parser = argparse.ArgumentParser(description="Process cryosection data and images.")
     parser.add_argument("cryosection", type=str, help="Cryosection identifier.")
     parser.add_argument("overview_image", type=str, help="Path to the overview image.")
+    parser.add_argument(
+        "--draw-microsamples", action="store_true",
+        help="Draw microsamples on the output image (default: do not draw)."
+    )
     args = parser.parse_args()
 
     cryosection = args.cryosection
     overview_image = args.overview_image
+    draw_microsamples = args.draw_microsamples
 
     input_data = fetch_data_from_airtable(cryosection)
 
@@ -132,12 +137,17 @@ def main():
     input_data["Xcoord_pixel_crop"] = round(input_data["Xcoord_pixel"] - crop_ref_x)
     input_data["Ycoord_pixel_crop"] = round(input_data["Ycoord_pixel"] - crop_ref_y)
 
-    marked_image = draw_microsamples_on_image(cropped_image, input_data)
-
-    output_image_path = f"{cryosection}_marked.jpg"
+    #Output csv
     output_csv_path = f"{cryosection}.csv"
-
-    marked_image.save(output_image_path)
     input_data.to_csv(output_csv_path, index=False)
 
-    print(f"Processed images and data saved as {output_image_path} and {output_csv_path}.")
+    #Output unmarked cropped image
+    output_image_path = f"{cryosection}.jpg"
+    cropped_image.save(output_image_path)
+
+    # Draw microsamples on the image if the flag is set
+    if draw_microsamples:
+        cropped_image = draw_microsamples_on_image(cropped_image, input_data)
+        output_image_path = f"{cryosection}_marked.jpg"
+
+    print(f"Processed images and data saved succesfully.")

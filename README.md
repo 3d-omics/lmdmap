@@ -1,4 +1,4 @@
-# lmdcropper
+# lmdmap
 
 ## Installation
 
@@ -9,7 +9,9 @@ pip install git+https://github.com/3d-omics/lmdmap.git
 ## Update
 
 ```{sh}
-pip install git+https://github.com/3d-omics/lmdmap.git --upgrade
+pip uninstall lmdmap
+pip install git+https://github.com/3d-omics/lmdmap.git
+
 ```
 
 
