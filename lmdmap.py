@@ -165,7 +165,7 @@ def main():
     if output_unmarked:
         cropped_image.save(output_unmarked)
     else:
-        output_unmarked = f"{cryosection}.csv"
+        output_unmarked = f"{cryosection}.jpg"
         cropped_image.save(output_unmarked)
 
     # Draw microsamples on the image if the flag is set
