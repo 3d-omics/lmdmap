@@ -109,16 +109,16 @@ def main():
         help="Path to the overview image (required)."
     )
     parser.add_argument(
-        "-t", "--output-table", type=str, required=True,
-        help="Output coordinate table."
+        "-t", "--output-table", type=str, required=None,
+        help="Output file name for the coordinate table (default: name.csv)."
     )
     parser.add_argument(
-        "-o", "--output-unmarked", type=str, required=True,
-        help="Output file name for the unmarked image (required)."
+        "-o", "--output-unmarked", type=str, required=None,
+        help="Output file name for the unmarked image (default: name.jpg)."
     )
     parser.add_argument(
         "-m", "--output-marked", type=str, default=None,
-        help="Output file name for the marked image (optional)."
+        help="Output file name for the marked image (default: none)."
     )
 
     args = parser.parse_args()
@@ -155,10 +155,18 @@ def main():
     input_data["Ycoord_pixel_crop"] = round(input_data["Ycoord_pixel"] - crop_ref_y)
 
     #Output csv
-    input_data.to_csv(output_table, index=False)
+    if output_table:
+        input_data.to_csv(output_table, index=False)
+    else:
+        output_table = f"{cryosection}.csv"
+        input_data.to_csv(output_table)
 
     #Output unmarked cropped image
-    cropped_image.save(output_unmarked)
+    if output_unmarked:
+        cropped_image.save(output_unmarked)
+    else:
+        output_unmarked = f"{cryosection}.csv"
+        cropped_image.save(output_unmarked)
 
     # Draw microsamples on the image if the flag is set
     if output_marked:
