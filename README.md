@@ -29,7 +29,7 @@ pip install git+https://github.com/3d-omics/lmdmap.git
 
 ## Add Airtable API KEY
 
-**lmdmap** retrieves the information of the microsamples directly from the 3D'omics Airtable database. In order for Airtable to enable your computer to fetch data from the database you need to declare an AIRTABLE_API_KEY, which can be created for you by the database administration.
+**lmdmap** retrieves the information of the microsamples directly from the 3D'omics Airtable database. In order for Airtable to enable your computer to fetch data from the database you need to declare an AIRTABLE_API_KEY, which can be created for you by the database administrator.
 
 Then, you can declare the variable for a one-time usage:
 ```{sh}
