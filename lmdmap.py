@@ -57,7 +57,7 @@ def fetch_data_from_airtable(cryosection):
                 size = ", ".join(map(str, size))
             if isinstance(shape, list):
                 shape = ", ".join(map(str, shape))
-                
+
             data.append({
                 "ID": record.get("id"),
                 "Xcoord": xcoord,
