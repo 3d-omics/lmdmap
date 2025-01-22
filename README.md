@@ -12,6 +12,12 @@ The latest version of **lmdmap** and its dependencies can be easily installed in
 pip install git+https://github.com/3d-omics/lmdmap.git
 ```
 
+To install a specific version use the following
+
+```{sh}
+pip install git+https://github.com/3d-omics/lmdmap.git@v1.0.0
+```
+
 ## Update
 
 If a new **lmdmap** version is released, you can upgrade the module using the following code.
