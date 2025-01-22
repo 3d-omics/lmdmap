@@ -109,14 +109,25 @@ def main():
         help="Path to the overview image (required)."
     )
     parser.add_argument(
-        "--draw-microsamples", action="store_true",
-        help="Draw microsamples on the output cropped image (optional)."
+        "-t", "--output-table", type=str, required=True,
+        help="Output coordinate table."
     )
+    parser.add_argument(
+        "-o", "--output-unmarked", type=str, required=True,
+        help="Output file name for the unmarked image (required)."
+    )
+    parser.add_argument(
+        "-m", "--output-marked", type=str, default=None,
+        help="Output file name for the marked image (optional)."
+    )
+
     args = parser.parse_args()
 
     cryosection = args.name
     overview_image = args.image
-    draw_microsamples = args.draw_microsamples
+    output_table = args.output_table
+    output_unmarked = args.output_unmarked
+    output_marked = args.output_marked
 
     input_data = fetch_data_from_airtable(cryosection)
 
@@ -144,17 +155,14 @@ def main():
     input_data["Ycoord_pixel_crop"] = round(input_data["Ycoord_pixel"] - crop_ref_y)
 
     #Output csv
-    output_csv_path = f"{cryosection}.csv"
-    input_data.to_csv(output_csv_path, index=False)
+    input_data.to_csv(output_table, index=False)
 
     #Output unmarked cropped image
-    output_image_path = f"{cryosection}.jpg"
-    cropped_image.save(output_image_path)
+    cropped_image.save(output_unmarked)
 
     # Draw microsamples on the image if the flag is set
-    if draw_microsamples:
+    if output_marked:
         cropped_image = draw_microsamples_on_image(cropped_image, input_data)
-        output_image_path = f"{cryosection}_marked.jpg"
-        cropped_image.save(output_image_path)
+        cropped_image.save(output_marked)
 
     print(f"Processed images and data saved succesfully.")
