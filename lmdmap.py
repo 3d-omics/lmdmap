@@ -43,6 +43,7 @@ def fetch_data_from_airtable(cryosection):
     for record in records:
         fields = record.get("fields", {})
         if fields.get("cryosection_text") == cryosection:
+            id = fields.get("ID")
             xcoord = fields.get("Xcoord")
             ycoord = fields.get("Ycoord")
             size = fields.get("size")
@@ -60,7 +61,7 @@ def fetch_data_from_airtable(cryosection):
                 shape = ", ".join(map(str, shape))
 
             data.append({
-                "ID": ID,
+                "ID": id,
                 "Xcoord": xcoord,
                 "Ycoord": ycoord,
                 "size": size,
