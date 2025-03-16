@@ -101,31 +101,20 @@ def draw_microsamples_on_image(image, microsamples):
 # Main script
 def main():
     parser = argparse.ArgumentParser(description="Process cryosection data and images.")
-    parser.add_argument(
-        "-n", "--name", type=str, required=True,
-        help="Cryosection identifier (required)."
-    )
-    parser.add_argument(
-        "-i", "--image", type=str, required=True,
-        help="Path to the overview image (required)."
-    )
-    parser.add_argument(
-        "-t", "--output-table", type=str, required=None,
-        help="Output file name for the coordinate table (default: name.csv)."
-    )
-    parser.add_argument(
-        "-o", "--output-unmarked", type=str, required=None,
-        help="Output file name for the unmarked image (default: name.jpg)."
-    )
-    parser.add_argument(
-        "-m", "--output-marked", type=str, default=None,
-        help="Output file name for the marked image (default: none)."
-    )
+    parser.add_argument("-n", "--name", type=str, required=True, help="Cryosection identifier (required).")
+    parser.add_argument("-i", "--image", type=str, required=True, help="Path to the overview image (required).")
+    parser.add_argument("-x", "--xoffset", type=str, required=False, default=0, help="X-axis offset.")
+    parser.add_argument("-y", "--yoffset", type=str, required=False, default=0, help="y-axis offset.")
+    parser.add_argument("-t", "--output-table", type=str, required=False, help="Output file name for the coordinate table (default: name.csv).")
+    parser.add_argument("-o", "--output-unmarked", type=str, required=False, help="Output file name for the unmarked image (default: name.jpg).")
+    parser.add_argument("-m", "--output-marked", type=str, default=False, help="Output file name for the marked image (default: none).")
 
     args = parser.parse_args()
 
     cryosection = args.name
     overview_image = args.image
+    xoffset = args.xoffset
+    yoffset = args.yoffset
     output_table = args.output_table
     output_unmarked = args.output_unmarked
     output_marked = args.output_marked
@@ -147,8 +136,8 @@ def main():
     crop_ref_x = round(microsample_centroid_pixel["Xcoord_pixel"] - WIDTH / 2)
     crop_ref_y = round(microsample_centroid_pixel["Ycoord_pixel"] - HEIGHT / 2)
 
-    crop_ref_x = max(crop_ref_x, 20)
-    crop_ref_y = max(crop_ref_y, 20)
+    crop_ref_x = max(crop_ref_x, 20) + xoffset
+    crop_ref_y = max(crop_ref_y, 20) + yoffset
 
     cropped_image = crop_image(overview_image, crop_ref_x, crop_ref_y)
 
