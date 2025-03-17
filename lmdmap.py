@@ -99,23 +99,16 @@ def draw_microsamples_on_image(image, microsamples):
     return image
 
 def stretch_image(image, x_percent, y_percent):
-    """
-    Stretches the image from the center using X and Y percentage scale factors.
+    # Convert percentage to scale factor (e.g., +20% -> 1.2, -20% -> 0.8)
+    x_scale = 1 + (x_percent / 100)
+    y_scale = 1 + (y_percent / 100)
 
-    Args:
-        image (PIL.Image): The original image.
-        x_percent (float): Scaling factor for width (e.g., 1.2 for 120%, 0.8 for 80%).
-        y_percent (float): Scaling factor for height.
-
-    Returns:
-        PIL.Image: The stretched image with the same final resolution (1000x1000).
-    """
     # Original size
     orig_width, orig_height = image.size
 
     # Compute new scaled dimensions
-    new_width = int(orig_width * x_percent)
-    new_height = int(orig_height * y_percent)
+    new_width = int(orig_width * x_scale)
+    new_height = int(orig_height * y_scale)
 
     # Resize the image
     stretched_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
@@ -133,7 +126,6 @@ def stretch_image(image, x_percent, y_percent):
     final_image = stretched_image.crop((left, top, right, bottom))
 
     return final_image
-
 
 # Main script
 def main():
@@ -154,6 +146,8 @@ def main():
     overview_image = args.image
     xoffset = args.xoffset
     yoffset = args.yoffset
+    xstretch = args.xstretch
+    ystretch = args.ystretch
     output_table = args.output_table
     output_unmarked = args.output_unmarked
     output_marked = args.output_marked
