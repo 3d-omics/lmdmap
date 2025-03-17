@@ -78,9 +78,9 @@ def determine_slide_position(mean_x):
             return i + 1, coords["membrane_tl"], coords["membrane_br"]
     return None, None, None
 
-def process_input_data(input_data, membrane_tl):
-    input_data["Xcoord_pixel"] = (input_data["Xcoord"] - membrane_tl[0]) / RESOLUTION_X + 120
-    input_data["Ycoord_pixel"] = (input_data["Ycoord"] - membrane_tl[1]) / RESOLUTION_Y
+def process_input_data(input_data, membrane_tl, xoffset, yoffset):
+    input_data["Xcoord_pixel"] = ((input_data["Xcoord"] - membrane_tl[0]) / RESOLUTION_X + 120) + int(xoffset)
+    input_data["Ycoord_pixel"] = ((input_data["Ycoord"] - membrane_tl[1]) / RESOLUTION_Y) + int(yoffset)
     return input_data
 
 def crop_image(image_path, crop_ref_x, crop_ref_y):
@@ -130,14 +130,14 @@ def main():
     if slide_position is None:
         raise ValueError("Microsample is not within any slide's bounds.")
 
-    input_data = process_input_data(input_data, membrane_tl)
+    input_data = process_input_data(input_data, membrane_tl, xoffset, yoffset)
 
     microsample_centroid_pixel = input_data[["Xcoord_pixel", "Ycoord_pixel"]].mean()
     crop_ref_x = round(microsample_centroid_pixel["Xcoord_pixel"] - WIDTH / 2)
     crop_ref_y = round(microsample_centroid_pixel["Ycoord_pixel"] - HEIGHT / 2)
 
-    crop_ref_x = max(crop_ref_x, 20) + int(xoffset)
-    crop_ref_y = max(crop_ref_y, 20) + int(yoffset)
+    crop_ref_x = max(crop_ref_x, 20)
+    crop_ref_y = max(crop_ref_y, 20)
 
     cropped_image = crop_image(overview_image, crop_ref_x, crop_ref_y)
 
