@@ -194,7 +194,7 @@ def main():
 
     # Draw microsamples on the image if the flag is set
     if output_marked:
-        stretched_image = draw_microsamples_on_image(cropped_image, input_data)
+        stretched_image = draw_microsamples_on_image(stretched_image, input_data)
         stretched_image.save(output_marked)
 
     print(f"Processed images and data saved succesfully.")
