@@ -79,8 +79,8 @@ def determine_slide_position(mean_x):
     return None, None, None
 
 def process_input_data(input_data, membrane_tl, xoffset, yoffset):
-    input_data["Xcoord_pixel"] = ((input_data["Xcoord"] - membrane_tl[0]) / RESOLUTION_X + 120) + int(xoffset)
-    input_data["Ycoord_pixel"] = ((input_data["Ycoord"] - membrane_tl[1]) / RESOLUTION_Y) + int(yoffset)
+    input_data["Xcoord_pixel"] = ((input_data["Xcoord"] - membrane_tl[0]) / RESOLUTION_X + 120) + xoffset
+    input_data["Ycoord_pixel"] = ((input_data["Ycoord"] - membrane_tl[1]) / RESOLUTION_Y) + yoffset
     return input_data
 
 def crop_image(image_path, crop_ref_x, crop_ref_y):
@@ -144,10 +144,10 @@ def main():
 
     cryosection = args.name
     overview_image = args.image
-    xoffset = args.xoffset
-    yoffset = args.yoffset
-    xstretch = args.xstretch
-    ystretch = args.ystretch
+    xoffset = int(args.xoffset)
+    yoffset = int(args.yoffset)
+    xstretch = int(args.xstretch)
+    ystretch = int(args.ystretch)
     output_table = args.output_table
     output_unmarked = args.output_unmarked
     output_marked = args.output_marked

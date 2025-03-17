@@ -23,7 +23,7 @@ pip install git+https://github.com/3d-omics/lmdmap.git@v1.0.0
 If a new **lmdmap** version is released, you can upgrade the module using the following code.
 
 ```{sh}
-pip uninstall lmdmap
+pip uninstall lmdmap -y
 pip install git+https://github.com/3d-omics/lmdmap.git
 ```
 
