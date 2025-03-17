@@ -50,16 +50,26 @@ The minimum arguments needed to use **lmdmap** are the cryosection name (***-n**
 
 By default, **lmdmap** creates to documents in the working directory: a csv file containing the pixel coordinates, and jpg file of the cropped image.
 
-The following optional arguments can be also used:
+The following optional arguments can be also used for defining outputs:
 
 - ***-t*** enables defining the path and name of the csv table.
 - ***-o*** enables defining the path and name of the regular cropped image.
 - ***-m*** enables defining the path and name of the cropped image with the positions of microsamples marked.
 
-Some usage examples:
-
 ```{sh}
 lmdmap -n G007bI105A -i 241113G007bI105post.jpg
 lmdmap -n G007bI105A -i 241113G007bI105post.jpg -t mycustomoutput.csv -o mycustomoutput.jpg -m mycustomoutput_marked.jpg
 lmdmap --name G007bI105A --image input/241113G007bI105post.jpg --draw-microsamples
+```
+
+The following optional arguments can be used to manually correct the offset of the cutting points and the stretch of the image:
+
+- ***-x*** pixel offset in the x axis.
+- ***-y*** pixel offset in the y axis.
+- ***-w*** percentage image stretch in the x axis.
+- ***-l*** percentage image stretch in the y axis.
+
+```{sh}
+G103bO202A_marked.jpg lmdmap -n G103bO202A -i G103bO202_post.jpg -x -92 -l 4 -t G103bO202A.csv -o G103bO202A.jpg -m G103bO202A_marked.jpg
+lmdmap -n G121eO302A -i G121eO302_pre.jpg -x -100 -t G121eO302A.csv -o G121eO302A.jpg -m G121eO302A_marked.jpg
 ```
