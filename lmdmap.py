@@ -98,6 +98,43 @@ def draw_microsamples_on_image(image, microsamples):
         )
     return image
 
+def stretch_image(image, x_percent, y_percent):
+    """
+    Stretches the image from the center using X and Y percentage scale factors.
+
+    Args:
+        image (PIL.Image): The original image.
+        x_percent (float): Scaling factor for width (e.g., 1.2 for 120%, 0.8 for 80%).
+        y_percent (float): Scaling factor for height.
+
+    Returns:
+        PIL.Image: The stretched image with the same final resolution (1000x1000).
+    """
+    # Original size
+    orig_width, orig_height = image.size
+
+    # Compute new scaled dimensions
+    new_width = int(orig_width * x_percent)
+    new_height = int(orig_height * y_percent)
+
+    # Resize the image
+    stretched_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+    # Crop from the center to maintain 1000x1000 size
+    final_size = (1000, 1000)
+    center_x, center_y = new_width // 2, new_height // 2
+
+    left = center_x - final_size[0] // 2
+    top = center_y - final_size[1] // 2
+    right = center_x + final_size[0] // 2
+    bottom = center_y + final_size[1] // 2
+
+    # Crop to maintain final resolution
+    final_image = stretched_image.crop((left, top, right, bottom))
+
+    return final_image
+
+
 # Main script
 def main():
     parser = argparse.ArgumentParser(description="Process cryosection data and images.")
@@ -105,6 +142,8 @@ def main():
     parser.add_argument("-i", "--image", type=str, required=True, help="Path to the overview image (required).")
     parser.add_argument("-x", "--xoffset", type=str, required=False, default=0, help="X-axis offset.")
     parser.add_argument("-y", "--yoffset", type=str, required=False, default=0, help="y-axis offset.")
+    parser.add_argument("-w", "--xstretch", type=str, required=False, default=0, help="X-axis stretch.")
+    parser.add_argument("-l", "--ystretch", type=str, required=False, default=0, help="y-axis stretch.")
     parser.add_argument("-t", "--output-table", type=str, required=False, help="Output file name for the coordinate table (default: name.csv).")
     parser.add_argument("-o", "--output-unmarked", type=str, required=False, help="Output file name for the unmarked image (default: name.jpg).")
     parser.add_argument("-m", "--output-marked", type=str, default=False, help="Output file name for the marked image (default: none).")
@@ -140,6 +179,7 @@ def main():
     crop_ref_y = max(crop_ref_y, 20)
 
     cropped_image = crop_image(overview_image, crop_ref_x, crop_ref_y)
+    stretched_image = stretch_image(cropped_image, xstretch, ystretch)
 
     input_data["Xcoord_pixel_crop"] = round(input_data["Xcoord_pixel"] - crop_ref_x)
     input_data["Ycoord_pixel_crop"] = round(input_data["Ycoord_pixel"] - crop_ref_y)
