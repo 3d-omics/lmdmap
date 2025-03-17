@@ -136,8 +136,8 @@ def main():
     crop_ref_x = round(microsample_centroid_pixel["Xcoord_pixel"] - WIDTH / 2)
     crop_ref_y = round(microsample_centroid_pixel["Ycoord_pixel"] - HEIGHT / 2)
 
-    crop_ref_x = max(crop_ref_x, 20) + xoffset
-    crop_ref_y = max(crop_ref_y, 20) + yoffset
+    crop_ref_x = max(crop_ref_x, 20) + int(xoffset)
+    crop_ref_y = max(crop_ref_y, 20) + int(yoffset)
 
     cropped_image = crop_image(overview_image, crop_ref_x, crop_ref_y)
 
