@@ -187,14 +187,14 @@ def main():
 
     #Output unmarked cropped image
     if output_unmarked:
-        cropped_image.save(output_unmarked)
+        stretched_image.save(output_unmarked)
     else:
         output_unmarked = f"{cryosection}.jpg"
-        cropped_image.save(output_unmarked)
+        stretched_image.save(output_unmarked)
 
     # Draw microsamples on the image if the flag is set
     if output_marked:
-        cropped_image = draw_microsamples_on_image(cropped_image, input_data)
-        cropped_image.save(output_marked)
+        stretched_image = draw_microsamples_on_image(cropped_image, input_data)
+        stretched_image.save(output_marked)
 
     print(f"Processed images and data saved succesfully.")
