@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 from pyairtable import Table, Api
 
 # Constants
-WIDTH = 1000
-HEIGHT = 1000
 MEMBRANE_MICRON_WIDTH = 16000
 MEMBRANE_MICRON_HEIGHT = 45000
 MEMBRANE_PIXEL_WIDTH = 2180
@@ -83,7 +81,7 @@ def process_input_data(input_data, membrane_tl, xoffset, yoffset):
     input_data["Ycoord_pixel"] = ((input_data["Ycoord"] - membrane_tl[1]) / RESOLUTION_Y) + yoffset
     return input_data
 
-def crop_image(image_path, crop_ref_x, crop_ref_y):
+def crop_image(image_path, crop_ref_x, crop_ref_y, WIDTH, HEIGHT):
     with Image.open(image_path) as img:
         cropped = img.crop((crop_ref_x, crop_ref_y, crop_ref_x + WIDTH, crop_ref_y + HEIGHT))
         return cropped
@@ -98,7 +96,7 @@ def draw_microsamples_on_image(image, microsamples):
         )
     return image
 
-def stretch_image(image, x_percent, y_percent):
+def stretch_image(image, x_percent, y_percent, WIDTH, HEIGHT):
     # Convert percentage to scale factor (e.g., +20% -> 1.2, -20% -> 0.8)
     x_scale = 1 + (x_percent / 100)
     y_scale = 1 + (y_percent / 100)
@@ -114,7 +112,7 @@ def stretch_image(image, x_percent, y_percent):
     stretched_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
     # Crop from the center to maintain 1000x1000 size
-    final_size = (1000, 1000)
+    final_size = (WIDTH, HEIGHT)
     center_x, center_y = new_width // 2, new_height // 2
 
     left = center_x - final_size[0] // 2
@@ -132,6 +130,7 @@ def main():
     parser = argparse.ArgumentParser(description="Process cryosection data and images.")
     parser.add_argument("-n", "--name", type=str, required=True, help="Cryosection identifier (required).")
     parser.add_argument("-i", "--image", type=str, required=True, help="Path to the overview image (required).")
+    parser.add_argument("-s", "--size", type=str, required=False, default=1000, help="Size of the cropping square in pixels.")
     parser.add_argument("-x", "--xoffset", type=str, required=False, default=0, help="X-axis offset.")
     parser.add_argument("-y", "--yoffset", type=str, required=False, default=0, help="y-axis offset.")
     parser.add_argument("-w", "--xstretch", type=str, required=False, default=0, help="X-axis stretch.")
@@ -144,6 +143,7 @@ def main():
 
     cryosection = args.name
     overview_image = args.image
+    crop_size = int(args.size)
     xoffset = int(args.xoffset)
     yoffset = int(args.yoffset)
     xstretch = int(args.xstretch)
@@ -153,6 +153,9 @@ def main():
     output_marked = args.output_marked
 
     input_data = fetch_data_from_airtable(cryosection)
+
+    WIDTH = crop_size
+    HEIGHT = crop_size
 
     if input_data.empty:
         raise ValueError(f"No data found for cryosection: {cryosection}")
@@ -172,11 +175,17 @@ def main():
     crop_ref_x = max(crop_ref_x, 20)
     crop_ref_y = max(crop_ref_y, 20)
 
-    cropped_image = crop_image(overview_image, crop_ref_x, crop_ref_y)
-    stretched_image = stretch_image(cropped_image, xstretch, ystretch)
+    cropped_image = crop_image(overview_image, crop_ref_x, crop_ref_y, WIDTH, HEIGHT)
+    stretched_image = stretch_image(cropped_image, xstretch, ystretch, WIDTH, HEIGHT)
 
     input_data["Xcoord_pixel_crop"] = round(input_data["Xcoord_pixel"] - crop_ref_x)
     input_data["Ycoord_pixel_crop"] = round(input_data["Ycoord_pixel"] - crop_ref_y)
+
+    #Convert to 1000x1000 px image and coordinates
+    final_image = stretched_image.resize((1000, 1000), Image.Resampling.LANCZOS)
+    input_data['Xcoord_pixel_crop'] = input_data["Xcoord_pixel_crop"] * 1000 / crop_size
+    input_data['Ycoord_pixel_crop'] = input_data["Ycoord_pixel_crop"] * 1000 / crop_size
+    input_data[['Xcoord_pixel_crop','Ycoord_pixel_crop']] = input_data[['Xcoord_pixel_crop','Ycoord_pixel_crop']].round().astype(int)
 
     #Output csv
     if output_table:
@@ -187,14 +196,14 @@ def main():
 
     #Output unmarked cropped image
     if output_unmarked:
-        stretched_image.save(output_unmarked)
+        final_image.save(output_unmarked)
     else:
         output_unmarked = f"{cryosection}.jpg"
-        stretched_image.save(output_unmarked)
+        final_image.save(output_unmarked)
 
     # Draw microsamples on the image if the flag is set
     if output_marked:
-        stretched_image = draw_microsamples_on_image(stretched_image, input_data)
-        stretched_image.save(output_marked)
+        final_image = draw_microsamples_on_image(final_image, input_data)
+        final_image.save(output_marked)
 
     print(f"Processed images and data saved succesfully.")
