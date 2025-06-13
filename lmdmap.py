@@ -27,6 +27,9 @@ BASE_ID = "appKakM1bnKSekwuW"
 TABLE_NAME = "4-MSE-Info"
 
 # Functions
+def notempty(value):
+    return value is not None and str(value).strip() != ''
+
 def fetch_data_from_airtable(cryosection):
     api_key = os.getenv("AIRTABLE_API_KEY")
     if not api_key:
@@ -40,12 +43,13 @@ def fetch_data_from_airtable(cryosection):
     data = []
     for record in records:
         fields = record.get("fields", {})
-        if fields.get("cryosection_text") == cryosection:
+        if fields.get("cryosection_text") == cryosection and notempty(fields.get("Xcoord")):
             id = fields.get("ID")
             xcoord = fields.get("Xcoord")
             ycoord = fields.get("Ycoord")
             size = fields.get("size")
             shape = fields.get("shape")
+            error = fields.get("error")
 
             # Handle cases where Xcoord or Ycoord is a list
             if isinstance(xcoord, list):
@@ -65,7 +69,8 @@ def fetch_data_from_airtable(cryosection):
                 "size": size,
                 "shape": shape,
                 "cryosection_text": fields.get("cryosection_text"),
-                "SampleType": fields.get("SampleType")
+                "SampleType": fields.get("SampleType"),
+                "error": error
             })
 
     return pd.DataFrame(data)
@@ -146,6 +151,7 @@ def main():
     parser.add_argument("-i", "--image", type=str, required=True, help="Path to the overview image (required).")
     parser.add_argument("-s", "--size", type=str, required=False, default=1000, help="Size of the cropping square in pixels.")
     parser.add_argument("-c", "--code", required=False, action="store_true", help="Whether to add sample labels")
+    parser.add_argument("-e", "--error", required=False, action="store_true", help="Whether to remove samples with errors")
     parser.add_argument("-x", "--xoffset", type=str, required=False, default=0, help="X-axis offset.")
     parser.add_argument("-y", "--yoffset", type=str, required=False, default=0, help="y-axis offset.")
     parser.add_argument("-w", "--xstretch", type=str, required=False, default=0, help="X-axis stretch.")
@@ -160,6 +166,7 @@ def main():
     overview_image = args.image
     crop_size = int(args.size)
     show_labels = args.code
+    error_flag = args.error
     xoffset = int(args.xoffset)
     yoffset = int(args.yoffset)
     xstretch = int(args.xstretch)
@@ -169,6 +176,11 @@ def main():
     output_marked = args.output_marked
 
     input_data = fetch_data_from_airtable(cryosection)
+
+    #filter samples with error flag
+    if error_flag:
+        empty_mask = input_data['error'].isna() | (input_data['error'] == '')
+        input_data = input_data[empty_mask]
 
     WIDTH = crop_size
     HEIGHT = crop_size
