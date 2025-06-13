@@ -3,7 +3,7 @@ import argparse
 import os
 import pandas as pd
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import matplotlib.pyplot as plt
 from pyairtable import Table, Api
 
@@ -86,14 +86,28 @@ def crop_image(image_path, crop_ref_x, crop_ref_y, WIDTH, HEIGHT):
         cropped = img.crop((crop_ref_x, crop_ref_y, crop_ref_x + WIDTH, crop_ref_y + HEIGHT))
         return cropped
 
-def draw_microsamples_on_image(image, microsamples):
+def draw_microsamples_on_image(image, input_data, show_labels=False):
     draw = ImageDraw.Draw(image)
-    for _, row in microsamples.iterrows():
+    font = ImageFont.load_default()
+
+    for _, row in input_data.iterrows():
+        x = row["Xcoord_pixel_crop"]
+        y = row["Ycoord_pixel_crop"]
+        # Draw the sample point
         draw.ellipse(
-            [(row["Xcoord_pixel_crop"] - 2, row["Ycoord_pixel_crop"] - 2),
-             (row["Xcoord_pixel_crop"] + 2, row["Ycoord_pixel_crop"] + 2)],
+            [(x - 2, y - 2), (x + 2, y + 2)],
             fill="red"
         )
+        # Draw the ID label next to the ellipse
+        if show_labels:
+            label = str(row.get("ID", ""))
+            draw.text(
+                (x + 5, y - 5),  # offset to avoid overlapping the circle
+                label,
+                fill="white",
+                font=font
+            )
+
     return image
 
 def stretch_image(image, x_percent, y_percent, WIDTH, HEIGHT):
@@ -131,6 +145,7 @@ def main():
     parser.add_argument("-n", "--name", type=str, required=True, help="Cryosection identifier (required).")
     parser.add_argument("-i", "--image", type=str, required=True, help="Path to the overview image (required).")
     parser.add_argument("-s", "--size", type=str, required=False, default=1000, help="Size of the cropping square in pixels.")
+    parser.add_argument("-c", "--code", required=False, action="store_true", help="Whether to add sample labels")
     parser.add_argument("-x", "--xoffset", type=str, required=False, default=0, help="X-axis offset.")
     parser.add_argument("-y", "--yoffset", type=str, required=False, default=0, help="y-axis offset.")
     parser.add_argument("-w", "--xstretch", type=str, required=False, default=0, help="X-axis stretch.")
@@ -144,6 +159,7 @@ def main():
     cryosection = args.name
     overview_image = args.image
     crop_size = int(args.size)
+    show_labels = args.code
     xoffset = int(args.xoffset)
     yoffset = int(args.yoffset)
     xstretch = int(args.xstretch)
@@ -204,7 +220,7 @@ def main():
 
     # Draw microsamples on the image if the flag is set
     if output_marked:
-        final_image = draw_microsamples_on_image(final_image, input_data)
+        final_image = draw_microsamples_on_image(final_image, input_data, show_labels)
         final_image.save(output_marked)
 
     print(f"Processed images and data saved succesfully.")
