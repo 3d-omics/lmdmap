@@ -186,6 +186,7 @@ def main():
     input_data['Xcoord_pixel_crop'] = input_data["Xcoord_pixel_crop"] * 1000 / crop_size
     input_data['Ycoord_pixel_crop'] = input_data["Ycoord_pixel_crop"] * 1000 / crop_size
     input_data[['Xcoord_pixel_crop','Ycoord_pixel_crop']] = input_data[['Xcoord_pixel_crop','Ycoord_pixel_crop']].round().astype(int)
+    input_data.sort_values('ID', inplace=True)
 
     #Output csv
     if output_table:
