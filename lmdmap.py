@@ -40,23 +40,28 @@ def fetch_data_from_airtable(cryosection):
     records = table.all()
 
     # Extract and filter records by cryosection
+    errors = {}
     data = []
     for record in records:
         fields = record.get("fields", {})
-        if fields.get("cryosection_text") == cryosection and notempty(fields.get("Xcoord")):
+        if fields.get("cryosection_text") == cryosection:
             id = fields.get("ID")
             xcoord = fields.get("Xcoord")
+
+            #Flag empty coordinate error
+            if not notempty(xcoord):
+                errors[id] = "empty coordinates"
+                continue
+
             ycoord = fields.get("Ycoord")
             size = fields.get("size")
             shape = fields.get("shape")
             error = fields.get("error")
 
-            # Handle cases where Xcoord or Ycoord is a list
             if isinstance(xcoord, list):
-                xcoord = np.mean(xcoord)  # Calculate the average
+                xcoord = np.mean(xcoord)
             if isinstance(ycoord, list):
-                ycoord = np.mean(ycoord)  # Calculate the average
-            # Convert lists to strings if necessary
+                ycoord = np.mean(ycoord)
             if isinstance(size, list):
                 size = ", ".join(map(str, size))
             if isinstance(shape, list):
@@ -73,7 +78,7 @@ def fetch_data_from_airtable(cryosection):
                 "error": error
             })
 
-    return pd.DataFrame(data)
+    return pd.DataFrame(data), errors
 
 def determine_slide_position(mean_x):
     for i, coords in enumerate(SLIDE_COORDS):
@@ -144,6 +149,39 @@ def stretch_image(image, x_percent, y_percent, WIDTH, HEIGHT):
 
     return final_image
 
+def has_negative(values):
+    if isinstance(values, list):
+        return any(isinstance(v, (int, float)) and v < 0 for v in values)
+    return isinstance(values, (int, float)) and values < 0
+
+def push_errors_to_airtable(errors):
+    from pyairtable import Api
+
+    api_key = os.getenv("AIRTABLE_API_KEY")
+    if not api_key:
+        raise ValueError("AIRTABLE_API_KEY environment variable is not set.")
+
+    api = Api(api_key)
+    table = api.table(BASE_ID, TABLE_NAME)
+
+    # Step 1: Build a mapping of custom ID → Airtable Record ID
+    all_records = table.all()
+    id_to_record_id = {}
+
+    for rec in all_records:
+        fields = rec.get("fields", {})
+        custom_id = fields.get("ID")  # Your custom ID field
+        if custom_id:
+            id_to_record_id[custom_id] = rec["id"]  # Airtable internal ID
+
+    # Step 2: Push error messages
+    for custom_id, error_msg in errors.items():
+        airtable_id = id_to_record_id.get(custom_id)
+        if airtable_id:
+            table.update(airtable_id, {"error": error_msg})
+        else:
+            print(f"Warning: ID {custom_id} not found in Airtable.")
+
 # Main script
 def main():
     parser = argparse.ArgumentParser(description="Process cryosection data and images.")
@@ -152,6 +190,7 @@ def main():
     parser.add_argument("-s", "--size", type=str, required=False, default=1000, help="Size of the cropping square in pixels.")
     parser.add_argument("-c", "--code", required=False, action="store_true", help="Whether to add sample labels")
     parser.add_argument("-e", "--error", required=False, action="store_true", help="Whether to remove samples with errors")
+    parser.add_argument("-a", "--airtable", required=False, action="store_true", help="Whether to record results in Airtable")
     parser.add_argument("-x", "--xoffset", type=str, required=False, default=0, help="X-axis offset.")
     parser.add_argument("-y", "--yoffset", type=str, required=False, default=0, help="y-axis offset.")
     parser.add_argument("-w", "--xstretch", type=str, required=False, default=0, help="X-axis stretch.")
@@ -167,6 +206,7 @@ def main():
     crop_size = int(args.size)
     show_labels = args.code
     error_flag = args.error
+    airtable = args.airtable
     xoffset = int(args.xoffset)
     yoffset = int(args.yoffset)
     xstretch = int(args.xstretch)
@@ -175,8 +215,10 @@ def main():
     output_unmarked = args.output_unmarked
     output_marked = args.output_marked
 
-    input_data = fetch_data_from_airtable(cryosection)
+    print("Fetching data from Airtable...")
+    input_data, errors = fetch_data_from_airtable(cryosection)
 
+    print("Calculating microsample coordinates...")
     #filter samples with error flag
     if error_flag:
         empty_mask = input_data['error'].isna() | (input_data['error'] == '')
@@ -215,6 +257,28 @@ def main():
     input_data['Ycoord_pixel_crop'] = input_data["Ycoord_pixel_crop"] * 1000 / crop_size
     input_data[['Xcoord_pixel_crop','Ycoord_pixel_crop']] = input_data[['Xcoord_pixel_crop','Ycoord_pixel_crop']].round().astype(int)
     input_data.sort_values('ID', inplace=True)
+
+    #Flag incorrect coordinate (usually membrane control) error and remove values
+    for idx, row in input_data.iterrows():
+        if row["Xcoord_pixel_crop"] < 0 or row["Ycoord_pixel_crop"] < 0:
+            input_data.at[idx, "Xcoord_pixel_crop"] = None
+            input_data.at[idx, "Ycoord_pixel_crop"] = None
+            errors[row["ID"]] = "incorrect coordinate"
+
+    # Print errors
+    if errors:
+        print("# The following errors were detected:")
+        print("# {:<10} | {}".format("ID", "Error Type"))
+        print("#" + "-" * 30)
+        for id, err in errors.items():
+            print(f"# {id:<10} | {err}")
+    else:
+        print("# No errors were detected.")
+
+    # Push errors to airtable
+    if airtable:
+        print("Recording errors in Airtable...")
+        push_errors_to_airtable(errors)
 
     #Output csv
     if output_table:
