@@ -224,7 +224,7 @@ def main():
     parser.add_argument("-i", "--image", type=str, required=True, help="Path to the overview image (required).")
     parser.add_argument("-s", "--size", type=str, required=False, default=1000, help="Size of the cropping square in pixels.")
     parser.add_argument("-c", "--code", required=False, action="store_true", help="Whether to add sample labels")
-    parser.add_argument("-d", "--discard", type=str, required=True, help="Comma-separated list of microsamples to discard.")
+    parser.add_argument("-d", "--discard", type=str, required=False, help="Comma-separated list of microsamples to discard.")
     parser.add_argument("-e", "--error", required=False, action="store_true", help="Whether to remove samples with errors")
     parser.add_argument("-a", "--airtable", required=False, action="store_true", help="Whether to record results in Airtable")
     parser.add_argument("-x", "--xoffset", type=str, required=False, default=0, help="X-axis offset.")
