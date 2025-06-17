@@ -27,6 +27,12 @@ BASE_ID = "appKakM1bnKSekwuW"
 TABLE_NAME = "4-MSE-Info"
 
 # Functions
+def check_output_path(path, label):
+    if path:
+        output_dir = os.path.dirname(os.path.abspath(path))
+        if output_dir and not os.path.exists(output_dir):
+            sys.exit(f"ERROR: Directory for {label} does not exist: {output_dir}")
+
 def notempty(value):
     return value is not None and str(value).strip() != ''
 
@@ -251,6 +257,11 @@ def main():
     output_table = args.output_table
     output_unmarked = args.output_unmarked
     output_marked = args.output_marked
+
+    # Validate output paths
+    check_output_path(output_table, "--output-table")
+    check_output_path(output_unmarked, "--output-unmarked")
+    check_output_path(output_marked, "--output-marked")
 
     print("Fetching data from Airtable...")
     input_data, errors = fetch_data_from_airtable(cryosection)
