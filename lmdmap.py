@@ -182,6 +182,41 @@ def push_errors_to_airtable(errors):
         else:
             print(f"Warning: ID {custom_id} not found in Airtable.")
 
+def push_coordinates_to_airtable(input_data):
+    from pyairtable import Api
+
+    api_key = os.getenv("AIRTABLE_API_KEY")
+    if not api_key:
+        raise ValueError("AIRTABLE_API_KEY environment variable is not set.")
+
+    api = Api(api_key)
+    table = api.table(BASE_ID, TABLE_NAME)
+
+    # Step 1: Build a mapping of custom ID → Airtable Record ID
+    all_records = table.all()
+    id_to_record_id = {}
+    for rec in all_records:
+        fields = rec.get("fields", {})
+        custom_id = fields.get("ID")
+        if custom_id:
+            id_to_record_id[custom_id] = rec["id"]
+
+    # Step 2: Push error messages
+    for _, row in input_data.iterrows():
+        custom_id = row.get("ID")
+        if not custom_id:
+            continue
+
+        airtable_id = id_to_record_id.get(custom_id)
+        if airtable_id:
+            update_fields = {
+                "sample_attribute[Xcoordpixel]": row.get("Xcoord_pixel_crop"),
+                "sample_attribute[Ycoordpixel]": row.get("Ycoord_pixel_crop"),
+            }
+            table.update(airtable_id, update_fields)
+        else:
+            print(f"Warning: ID {custom_id} not found in Airtable.")
+
 # Main script
 def main():
     parser = argparse.ArgumentParser(description="Process cryosection data and images.")
@@ -236,6 +271,8 @@ def main():
     if slide_position is None:
         raise ValueError("Microsample is not within any slide's bounds.")
 
+    #First cropping iteration
+
     input_data = process_input_data(input_data, membrane_tl, xoffset, yoffset)
 
     microsample_centroid_pixel = input_data[["Xcoord_pixel", "Ycoord_pixel"]].mean()
@@ -251,19 +288,13 @@ def main():
     input_data["Xcoord_pixel_crop"] = round(input_data["Xcoord_pixel"] - crop_ref_x)
     input_data["Ycoord_pixel_crop"] = round(input_data["Ycoord_pixel"] - crop_ref_y)
 
-    #Convert to 1000x1000 px image and coordinates
-    final_image = stretched_image.resize((1000, 1000), Image.Resampling.LANCZOS)
-    input_data['Xcoord_pixel_crop'] = input_data["Xcoord_pixel_crop"] * 1000 / crop_size
-    input_data['Ycoord_pixel_crop'] = input_data["Ycoord_pixel_crop"] * 1000 / crop_size
-    input_data[['Xcoord_pixel_crop','Ycoord_pixel_crop']] = input_data[['Xcoord_pixel_crop','Ycoord_pixel_crop']].round().astype(int)
-    input_data.sort_values('ID', inplace=True)
-
     #Flag incorrect coordinate (usually membrane control) error and remove values
-    for idx, row in input_data.iterrows():
-        if row["Xcoord_pixel_crop"] < 0 or row["Ycoord_pixel_crop"] < 0:
-            input_data.at[idx, "Xcoord_pixel_crop"] = None
-            input_data.at[idx, "Ycoord_pixel_crop"] = None
-            errors[row["ID"]] = "incorrect coordinate"
+    invalid_coords = (input_data["Xcoord_pixel_crop"] < 0) | (input_data["Ycoord_pixel_crop"] < 0)
+    errors = {
+        row["ID"]: "incorrect coordinate"
+        for _, row in input_data[invalid_coords].iterrows()
+    }
+    input_data = input_data[~invalid_coords].copy()
 
     # Print errors
     if errors:
@@ -272,13 +303,40 @@ def main():
         print("#" + "-" * 30)
         for id, err in errors.items():
             print(f"# {id:<10} | {err}")
+
+        # Push errors to airtable
+        if airtable:
+            print("Recording errors in Airtable...")
+            push_errors_to_airtable(errors)
     else:
         print("# No errors were detected.")
 
-    # Push errors to airtable
+    #Second cropping iteration (recalculate cropping without error-flagged samples)
+    if error_flag:
+        microsample_centroid_pixel = input_data[["Xcoord_pixel", "Ycoord_pixel"]].mean()
+        crop_ref_x = round(microsample_centroid_pixel["Xcoord_pixel"] - WIDTH / 2)
+        crop_ref_y = round(microsample_centroid_pixel["Ycoord_pixel"] - HEIGHT / 2)
+
+        crop_ref_x = max(crop_ref_x, 20)
+        crop_ref_y = max(crop_ref_y, 20)
+
+        cropped_image = crop_image(overview_image, crop_ref_x, crop_ref_y, WIDTH, HEIGHT)
+        stretched_image = stretch_image(cropped_image, xstretch, ystretch, WIDTH, HEIGHT)
+
+        input_data["Xcoord_pixel_crop"] = round(input_data["Xcoord_pixel"] - crop_ref_x)
+        input_data["Ycoord_pixel_crop"] = round(input_data["Ycoord_pixel"] - crop_ref_y)
+
+    #Convert to 1000x1000 px image and coordinates
+    final_image = stretched_image.resize((1000, 1000), Image.Resampling.LANCZOS)
+    input_data['Xcoord_pixel_crop'] = input_data["Xcoord_pixel_crop"] * 1000 / crop_size
+    input_data['Ycoord_pixel_crop'] = input_data["Ycoord_pixel_crop"] * 1000 / crop_size
+    input_data[['Xcoord_pixel_crop','Ycoord_pixel_crop']] = input_data[['Xcoord_pixel_crop','Ycoord_pixel_crop']].round().astype(int)
+    input_data.sort_values('ID', inplace=True)
+
+    # Push coordinates to airtable
     if airtable:
-        print("Recording errors in Airtable...")
-        push_errors_to_airtable(errors)
+        print("Recording pixel coordinates in Airtable...")
+        push_coordinates_to_airtable(input_data)
 
     #Output csv
     if output_table:

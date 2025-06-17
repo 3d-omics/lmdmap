@@ -68,8 +68,14 @@ The following optional arguments can be used to manually correct the offset of t
 - ***-y*** pixel offset in the y axis.
 - ***-w*** percentage image stretch in the x axis.
 - ***-l*** percentage image stretch in the y axis.
+- ***-s*** size of the cropping square in pixels (default: 1000)
 
 ```{sh}
 G103bO202A_marked.jpg lmdmap -n G103bO202A -i G103bO202_post.jpg -x -92 -l 4 -t G103bO202A.csv -o G103bO202A.jpg -m G103bO202A_marked.jpg
 lmdmap -n G121eO302A -i G121eO302_pre.jpg -x -100 -t G121eO302A.csv -o G121eO302A.jpg -m G121eO302A_marked.jpg
 ```
+
+The following optional arguments can be used to bypass errors and update records in Airtable:
+
+- ***-e*** ignore errors for the pixel coordinate calculations.
+- ***-a*** log errors and pixel coordinates in Airtable.
