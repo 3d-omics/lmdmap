@@ -224,6 +224,7 @@ def main():
     parser.add_argument("-i", "--image", type=str, required=True, help="Path to the overview image (required).")
     parser.add_argument("-s", "--size", type=str, required=False, default=1000, help="Size of the cropping square in pixels.")
     parser.add_argument("-c", "--code", required=False, action="store_true", help="Whether to add sample labels")
+    parser.add_argument("-d", "--discard", type=str, required=True, help="Comma-separated list of microsamples to discard.")
     parser.add_argument("-e", "--error", required=False, action="store_true", help="Whether to remove samples with errors")
     parser.add_argument("-a", "--airtable", required=False, action="store_true", help="Whether to record results in Airtable")
     parser.add_argument("-x", "--xoffset", type=str, required=False, default=0, help="X-axis offset.")
@@ -240,6 +241,7 @@ def main():
     overview_image = args.image
     crop_size = int(args.size)
     show_labels = args.code
+    discard = args.discard
     error_flag = args.error
     airtable = args.airtable
     xoffset = int(args.xoffset)
@@ -271,9 +273,20 @@ def main():
     if slide_position is None:
         raise ValueError("Microsample is not within any slide's bounds.")
 
+    #Initialise errors library
+    errors = {}
+
     #First cropping iteration
 
     input_data = process_input_data(input_data, membrane_tl, xoffset, yoffset)
+
+    if discard:
+        discard_ids = [x.strip() for x in discard.split(",")]
+        input_data = input_data[~input_data["ID"].isin(discard_ids)].copy()
+        #Add discarded IDs to the error library
+        for discarded_id in discard_ids:
+            errors[discarded_id] = "manually discarded"
+        print(f"# Discarded microsample(s): {len(discard_ids)}.")
 
     microsample_centroid_pixel = input_data[["Xcoord_pixel", "Ycoord_pixel"]].mean()
     crop_ref_x = round(microsample_centroid_pixel["Xcoord_pixel"] - WIDTH / 2)
@@ -290,10 +303,10 @@ def main():
 
     #Flag incorrect coordinate (usually membrane control) error and remove values
     invalid_coords = (input_data["Xcoord_pixel_crop"] < 0) | (input_data["Ycoord_pixel_crop"] < 0)
-    errors = {
+    errors.update({
         row["ID"]: "incorrect coordinate"
         for _, row in input_data[invalid_coords].iterrows()
-    }
+    })
     input_data = input_data[~invalid_coords].copy()
 
     # Print errors
