@@ -1,6 +1,7 @@
 
 import argparse
 import os
+import sys
 import pandas as pd
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -263,8 +264,19 @@ def main():
     check_output_path(output_unmarked, "--output-unmarked")
     check_output_path(output_marked, "--output-marked")
 
-    print("Fetching data from Airtable...")
-    input_data, errors = fetch_data_from_airtable(cryosection)
+    # Fetch data from Airtable, or if exist load it from the output csv to work faster
+    if args.output_table and os.path.exists(args.output_table):
+        print("Loading data from existing CSV...")
+        input_data = pd.read_csv(args.output_table)
+        # Reconstruct errors mapping from 'error' column
+        errors = {}
+        for _, row in input_data.iterrows():
+            err = row.get("error")
+            if pd.notnull(err) and err != "":
+                errors[row.get("ID")] = err
+    else:
+        print("Fetching data from Airtable...")
+        input_data, errors = fetch_data_from_airtable(cryosection)
 
     print("Calculating microsample coordinates...")
     #filter samples with error flag
